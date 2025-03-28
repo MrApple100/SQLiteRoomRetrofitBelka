@@ -1,15 +1,14 @@
 package ru.mrapple100.sqlroom
 
-import androidx.room.Database
 import androidx.room.Room
-import androidx.room.RoomDatabase
+import ru.mrapple100.sqlroom.local.AppDatabase
 
 object SingletoneBD {
 
 
     val db = Room.databaseBuilder(
         MainActivity.getContext(),
-        AppDatabase::class.java, "belka1"
+        AppDatabase::class.java, "belka4"
     ).build()
 
 }

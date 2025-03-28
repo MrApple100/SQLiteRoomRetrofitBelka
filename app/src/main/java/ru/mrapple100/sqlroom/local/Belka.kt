@@ -1,4 +1,4 @@
-package ru.mrapple100.sqlroom
+package ru.mrapple100.sqlroom.local
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
@@ -10,5 +10,7 @@ data class Belka(
     val id:Int =0,
 //    @ColumnInfo(name = "bugaga")
     val colorTail: String,
-    val name: String
+    val name: String,
+
+    val phraseId:Int
 )

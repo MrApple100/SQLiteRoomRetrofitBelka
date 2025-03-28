@@ -6,7 +6,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -30,6 +32,9 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import ru.mrapple100.sqlroom.local.Belka
+import ru.mrapple100.sqlroom.local.BelkaWithPhrase
+import ru.mrapple100.sqlroom.local.Phrase
 import ru.mrapple100.sqlroom.ui.theme.SQLRoomTheme
 
 class MainActivity : ComponentActivity() {
@@ -44,15 +49,22 @@ class MainActivity : ComponentActivity() {
             return context!!.applicationContext
         }
     }
-
-    var arrayMockBelka = ArrayList<Belka>().apply {
-        add(Belka(123, "Black", "Murka"))
-        add(Belka(122, "Black", "Murka"))
-        add(Belka(121, "Black", "Murka"))
+    var arrayMockPhrase = ArrayList<Phrase>().apply {
+        add(Phrase(1,"Я сегодня поел орехи"))
     }
 
-    val belkaMutableState = MutableStateFlow<List<Belka>>(arrayMockBelka)
-    val _belkaState = belkaMutableState.asStateFlow()
+    val phraseMutableState = MutableStateFlow<List<Phrase>>(arrayMockPhrase)
+    val _phraseState = phraseMutableState.asStateFlow()
+
+
+    var arrayMockBelkaWithPhrase = ArrayList<BelkaWithPhrase>().apply {
+        add(BelkaWithPhrase(Belka(123, "Black", "Murka",1),Phrase(0,"123")))
+        add(BelkaWithPhrase(Belka(123, "Black", "Murka",1),Phrase(0,"123")))
+        add(BelkaWithPhrase(Belka(123, "Black", "Murka",1),Phrase(0,"123")))
+    }
+
+    val BelkaWithPhraseMutableState = MutableStateFlow<List<BelkaWithPhrase>>(arrayMockBelkaWithPhrase)
+    val _BelkaWithPhraseState = BelkaWithPhraseMutableState.asStateFlow()
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -73,7 +85,12 @@ class MainActivity : ComponentActivity() {
     fun Greeting(name: String, modifier: Modifier = Modifier) {
         
         var belkaText by remember { mutableStateOf("") }
-        var arrayBelka = _belkaState.collectAsState().value
+        var phraseText by remember { mutableStateOf("") }
+
+        var idPhraseNext by remember { mutableStateOf(1) }
+
+        var arrayBelkaWithPhrase = _BelkaWithPhraseState.collectAsState().value
+        var arrayPhrase = _phraseState.collectAsState().value
 
         Column(
             modifier = Modifier
@@ -81,24 +98,73 @@ class MainActivity : ComponentActivity() {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+
+            TextField(value = phraseText, onValueChange = {it -> phraseText=it})
+            Button(onClick = {
+                GlobalScope.launch {
+                    SingletoneBD.db.belkaDao().insertPhrase(Phrase(0,phraseText))
+                    phraseMutableState.value = SingletoneBD.db.belkaDao().getAllPhrase()
+                }
+            }) {
+                Text(text = "Insert Phrase")
+            }
             TextField(value = belkaText, onValueChange = {it -> belkaText=it})
             Button(onClick = {
                 GlobalScope.launch {
-                    SingletoneBD.db.belkaDao().insertBelka(Belka(0, "Black", belkaText))
-                    belkaMutableState.value = SingletoneBD.db.belkaDao().getAllBelka()
+
+                    BelkaWithPhraseMutableState.value = SingletoneBD.db.belkaDao().getBelkaWithPhrase()
+                    idPhraseNext = _BelkaWithPhraseState.value.size+1
+                    SingletoneBD.db.belkaDao().insertBelka(Belka(0, "Black", belkaText,idPhraseNext))
+                    BelkaWithPhraseMutableState.value = SingletoneBD.db.belkaDao().getBelkaWithPhrase()
+
                 }
             }) {
                 Text(text = "Insert Belka")
             }
 
             LazyColumn {
-                items(arrayBelka){belka ->
+                items(arrayBelkaWithPhrase){belkaWithPhrase ->
                     Card(
                         modifier = Modifier.size(200.dp,100.dp)
                     ) {
-                        Column {
-                            Text(text = belka.name)
-                            Text(text = belka.colorTail)
+                        Row {
+                            Column(
+                                modifier = Modifier
+                                    .padding(5.dp),
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Text(text = belkaWithPhrase.belka.name)
+                                Text(text = belkaWithPhrase.belka.colorTail)
+                            }
+                            Column(
+                                modifier = Modifier
+                                    .weight(1.0f),
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Text(text = belkaWithPhrase.phrase.phrase)
+                            }
+                        }
+                    }
+                }
+            }
+
+            Text(text = "Фразы")
+
+            LazyColumn {
+                items(arrayPhrase){phrase ->
+                    Card(
+                        modifier = Modifier.size(200.dp,100.dp)
+                    ) {
+                        Row {
+                            Column(
+                                modifier = Modifier
+                                    .padding(5.dp),
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Text(text = ""+phrase.phraseId)
+                                Text(text = phrase.phrase)
+                            }
+
                         }
                     }
                 }
